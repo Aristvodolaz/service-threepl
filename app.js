@@ -10,7 +10,7 @@ const x3plService = require('./services/x3plService');
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT =  3010;
 
 // Middleware
 app.use(cors());
