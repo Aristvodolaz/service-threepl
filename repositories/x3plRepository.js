@@ -277,6 +277,71 @@ class X3PLRepository {
   }
 
   /**
+   * Search records with LIKE by multiple fields
+   * @param {Object} searchParams - Search parameters
+   * @param {string} searchParams.wr_name - Warehouse name to search for
+   * @param {string} searchParams.wr_shk - Warehouse barcode to search for
+   * @param {string} searchParams.shk - Product barcode to search for
+   * @param {string} searchParams.name - Product name to search for
+   * @returns {Promise<Array>} Array of found records
+   */
+  async searchWithLike(searchParams) {
+    try {
+      const pool = await poolPromise;
+      const request = pool.request();
+      
+      // Build WHERE conditions dynamically
+      const conditions = [];
+      
+      if (searchParams.wr_name) {
+        conditions.push('wr_name LIKE @wr_name');
+        request.input('wr_name', sql.NVarChar(255), `%${searchParams.wr_name}%`);
+      }
+      
+      if (searchParams.wr_shk) {
+        conditions.push('wr_shk LIKE @wr_shk');
+        request.input('wr_shk', sql.NVarChar(100), `%${searchParams.wr_shk}%`);
+      }
+      
+      if (searchParams.shk) {
+        conditions.push('shk LIKE @shk');
+        request.input('shk', sql.NVarChar(100), `%${searchParams.shk}%`);
+      }
+      
+      if (searchParams.name) {
+        conditions.push('name LIKE @name');
+        request.input('name', sql.NVarChar(255), `%${searchParams.name}%`);
+      }
+      
+      // If no search parameters provided, return empty array
+      if (conditions.length === 0) {
+        return [];
+      }
+      
+      const whereClause = conditions.join(' OR ');
+      
+      const result = await request.query(`
+        SELECT 
+          shk,
+          name,
+          wr_shk,
+          wr_name,
+          kolvo,
+          condition,
+          reason
+        FROM dbo.X_Three_PL
+        WHERE ${whereClause}
+        ORDER BY date DESC
+      `);
+
+      return result.recordset || [];
+    } catch (error) {
+      console.error('Error searching records with LIKE:', error);
+      throw new Error(`Failed to search records with LIKE: ${error.message}`);
+    }
+  }
+
+  /**
    * Find record for inventory by conditions
    * @param {Object} conditions - Search conditions
    * @returns {Promise<Object|null>} Found record or null

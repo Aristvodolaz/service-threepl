@@ -228,6 +228,69 @@ class X3PLService {
   }
 
   /**
+   * Search records with LIKE by multiple fields
+   * @param {Object} searchParams - Search parameters
+   * @param {string} searchParams.wr_name - Warehouse name to search for
+   * @param {string} searchParams.wr_shk - Warehouse barcode to search for
+   * @param {string} searchParams.shk - Product barcode to search for
+   * @param {string} searchParams.name - Product name to search for
+   * @returns {Promise<Object>} Success response with data or error
+   */
+  async searchWithLike(searchParams) {
+    try {
+      // Validate search parameters - at least one parameter should be provided
+      const validParams = {};
+      let hasValidParams = false;
+
+      if (searchParams.wr_name && typeof searchParams.wr_name === 'string' && searchParams.wr_name.trim() !== '') {
+        validParams.wr_name = searchParams.wr_name.trim();
+        hasValidParams = true;
+      }
+
+      if (searchParams.wr_shk && typeof searchParams.wr_shk === 'string' && searchParams.wr_shk.trim() !== '') {
+        validParams.wr_shk = searchParams.wr_shk.trim();
+        hasValidParams = true;
+      }
+
+      if (searchParams.shk && typeof searchParams.shk === 'string' && searchParams.shk.trim() !== '') {
+        validParams.shk = searchParams.shk.trim();
+        hasValidParams = true;
+      }
+
+      if (searchParams.name && typeof searchParams.name === 'string' && searchParams.name.trim() !== '') {
+        validParams.name = searchParams.name.trim();
+        hasValidParams = true;
+      }
+
+      if (!hasValidParams) {
+        return {
+          success: false,
+          error: 'Необходимо указать хотя бы один параметр поиска (wr_name, wr_shk, shk, name)'
+        };
+      }
+
+      // Search records in repository
+      const items = await x3plRepository.searchWithLike(validParams);
+
+      console.log(`Found ${items.length} records for search params:`, validParams);
+
+      // Return success response with data
+      return {
+        success: true,
+        data: items
+      };
+    } catch (error) {
+      console.error('Error in searchWithLike service:', error);
+      
+      // Return error response
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Perform inventory operation
    * @param {Object} data - Input data from request
    * @returns {Promise<Object>} Success response or error

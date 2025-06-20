@@ -231,6 +231,55 @@ class X3PLController {
   }
 
   /**
+   * Handle GET request to search records with LIKE by multiple fields
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async searchWithLike(req, res) {
+    try {
+      // Get search parameters from query
+      const { wr_name, wr_shk, shk, name } = req.query;
+      
+      // Log incoming request
+      console.log('Received GET /x3pl/search-like request with params:', { wr_name, wr_shk, shk, name });
+
+      // Call service to search records
+      const result = await x3plService.searchWithLike({ wr_name, wr_shk, shk, name });
+
+      if (result.success) {
+        // Success response with data
+        res.status(200).json({
+          success: true,
+          errorCode: 0,
+          value: {
+            items: result.data
+          }
+        });
+      } else {
+        // Business logic error (missing search parameters)
+        res.status(400).json({
+          success: false,
+          errorCode: 400,
+          value: {
+            error: result.error
+          }
+        });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error('Unexpected error in searchWithLike controller:', error);
+      
+      res.status(500).json({
+        success: false,
+        errorCode: 500,
+        value: {
+          error: 'Internal server error'
+        }
+      });
+    }
+  }
+
+  /**
    * Handle POST request to perform inventory operation
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object

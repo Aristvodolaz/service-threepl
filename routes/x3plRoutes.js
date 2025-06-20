@@ -283,6 +283,94 @@ router.get('/search', x3plController.searchByWrShk);
 
 /**
  * @swagger
+ * /x3pl/search-like:
+ *   get:
+ *     summary: Search records with LIKE by multiple fields
+ *     description: Returns all records that match any of the specified search parameters using LIKE operator. At least one search parameter must be provided.
+ *     tags:
+ *       - X_Three_PL
+ *     parameters:
+ *       - in: query
+ *         name: wr_name
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Warehouse name to search for (partial match)
+ *         example: "Склад"
+ *       - in: query
+ *         name: wr_shk
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Warehouse barcode to search for (partial match)
+ *         example: "CELL"
+ *       - in: query
+ *         name: shk
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Product barcode to search for (partial match)
+ *         example: "1234"
+ *       - in: query
+ *         name: name
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Product name to search for (partial match)
+ *         example: "Товар"
+ *     responses:
+ *       200:
+ *         description: Successfully found records
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ItemsResponse'
+ *             example:
+ *               success: true
+ *               errorCode: 0
+ *               value:
+ *                 items:
+ *                   - shk: "1234567890"
+ *                     name: "Товар 1"
+ *                     wr_shk: "CELL001"
+ *                     wr_name: "Склад А - Ячейка 001"
+ *                     kolvo: 10
+ *                     condition: "Good"
+ *                     reason: "Storage"
+ *                   - shk: "1234999999"
+ *                     name: "Другой товар"
+ *                     wr_shk: "CELL002"
+ *                     wr_name: "Склад Б - Ячейка 002"
+ *                     kolvo: 5
+ *                     condition: "Excellent"
+ *                     reason: null
+ *       400:
+ *         description: Bad request - no search parameters provided
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 400
+ *               value:
+ *                 error: "Необходимо указать хотя бы один параметр поиска (wr_name, wr_shk, shk, name)"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 500
+ *               value:
+ *                 error: "Internal server error"
+ */
+router.get('/search-like', x3plController.searchWithLike);
+
+/**
+ * @swagger
  * /x3pl/inventory:
  *   post:
  *     summary: Perform inventory operation
