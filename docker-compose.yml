@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Node.js application
+  app:
+    build:
+      context: .
+      target: development
+    container_name: service-threepl-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_SERVER=mssql
+      - DB_USER=sa
+      - DB_PASSWORD=YourStrong!Passw0rd
+      - DB_DATABASE=ThreePL
+      - DB_PORT=1433
+      - PORT=3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - threepl-network
+    restart: unless-stopped
+
+  # Microsoft SQL Server
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: service-threepl-mssql
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - MSSQL_PID=Express
+    volumes:
+      - mssql-data:/var/opt/mssql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - threepl-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  mssql-data:
+    driver: local
+
+networks:
+  threepl-network:
+    driver: bridge 
