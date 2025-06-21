@@ -46,6 +46,50 @@ class X3PLController {
   }
 
   /**
+   * Handle POST request to add minimal record with only shk and name
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async addMinimalRecord(req, res) {
+    try {
+      // Log incoming request
+      console.log('Received POST /x3pl/add-minimal request:', req.body);
+
+      // Call service to process the minimal record request
+      const result = await x3plService.addMinimalRecord(req.body);
+
+      if (result.success) {
+        // Success response with inserted record data
+        res.status(200).json({
+          success: true,
+          errorCode: 0,
+          value: result.data
+        });
+      } else {
+        // Business logic error
+        res.status(400).json({
+          success: false,
+          errorCode: 400,
+          value: {
+            error: result.error
+          }
+        });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error('Unexpected error in addMinimalRecord controller:', error);
+      
+      res.status(500).json({
+        success: false,
+        errorCode: 500,
+        value: {
+          error: 'Internal server error'
+        }
+      });
+    }
+  }
+
+  /**
    * Handle GET request to get all placed items (razmeshennye)
    * @param {Object} req - Express request object
    * @param {Object} res - Express response object
@@ -363,6 +407,50 @@ class X3PLController {
     } catch (error) {
       // Handle unexpected errors
       console.error('Unexpected error in getAllRecords controller:', error);
+      
+      res.status(500).json({
+        success: false,
+        errorCode: 500,
+        value: {
+          error: 'Internal server error'
+        }
+      });
+    }
+  }
+
+  /**
+   * Handle PUT request to update record with wr_shk and kolvo
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async updateRecord(req, res) {
+    try {
+      // Log incoming request
+      console.log('Received PUT /x3pl/update request:', req.body);
+
+      // Call service to process the update request
+      const result = await x3plService.updateRecord(req.body);
+
+      if (result.success) {
+        // Success response with updated record data
+        res.status(200).json({
+          success: true,
+          errorCode: 0,
+          value: result.data
+        });
+      } else {
+        // Business logic error
+        res.status(400).json({
+          success: false,
+          errorCode: 400,
+          value: {
+            error: result.error
+          }
+        });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error('Unexpected error in updateRecord controller:', error);
       
       res.status(500).json({
         success: false,

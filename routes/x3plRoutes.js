@@ -62,6 +62,232 @@ router.post('/add', x3plController.addRecord);
 
 /**
  * @swagger
+ * /x3pl/add-minimal:
+ *   post:
+ *     summary: Add minimal record to X_Three_PL table
+ *     description: Creates a new record in X_Three_PL table with only shk and name. Date is automatically set to current datetime, other fields are set to default values.
+ *     tags:
+ *       - X_Three_PL
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - shk
+ *               - name
+ *             properties:
+ *               shk:
+ *                 type: string
+ *                 description: Product barcode
+ *                 example: "1234567890"
+ *               name:
+ *                 type: string
+ *                 description: Product name
+ *                 example: "Новый товар"
+ *           example:
+ *             shk: "1234567890"
+ *             name: "Новый товар"
+ *     responses:
+ *       200:
+ *         description: Minimal record added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errorCode:
+ *                   type: integer
+ *                   example: 0
+ *                 value:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Generated record ID
+ *                       example: 1
+ *                     shk:
+ *                       type: string
+ *                       description: Product barcode
+ *                       example: "1234567890"
+ *                     name:
+ *                       type: string
+ *                       description: Product name
+ *                       example: "Новый товар"
+ *                     date:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Automatically set creation date
+ *                       example: "2024-01-15T10:30:00.000Z"
+ *             example:
+ *               success: true
+ *               errorCode: 0
+ *               value:
+ *                 id: 1
+ *                 shk: "1234567890"
+ *                 name: "Новый товар"
+ *                 date: "2024-01-15T10:30:00.000Z"
+ *       400:
+ *         description: Bad request - validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               validationError:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Validation failed: shk is required and must be a non-empty string"
+ *               missingName:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Validation failed: name is required and must be a non-empty string"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 500
+ *               value:
+ *                 error: "Internal server error"
+ */
+router.post('/add-minimal', x3plController.addMinimalRecord);
+
+/**
+ * @swagger
+ * /x3pl/update:
+ *   put:
+ *     summary: Update record with warehouse barcode and quantity
+ *     description: Updates an existing record in X_Three_PL table with wr_shk and kolvo. Automatically sets date_upd to current datetime and retrieves warehouse name from x_Storage_Scklads.
+ *     tags:
+ *       - X_Three_PL
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *               - wr_shk
+ *               - kolvo
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 description: Record ID to update
+ *                 example: 1
+ *               wr_shk:
+ *                 type: string
+ *                 description: Warehouse barcode
+ *                 example: "CELL001"
+ *               kolvo:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Quantity
+ *                 example: 10
+ *           example:
+ *             id: 1
+ *             wr_shk: "CELL001"
+ *             kolvo: 10
+ *     responses:
+ *       200:
+ *         description: Record updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errorCode:
+ *                   type: integer
+ *                   example: 0
+ *                 value:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Updated record ID
+ *                       example: 1
+ *                     wr_shk:
+ *                       type: string
+ *                       description: Warehouse barcode
+ *                       example: "CELL001"
+ *                     wr_name:
+ *                       type: string
+ *                       description: Warehouse name retrieved from x_Storage_Scklads
+ *                       example: "Склад А - Ячейка 001"
+ *                     kolvo:
+ *                       type: integer
+ *                       description: Updated quantity
+ *                       example: 10
+ *                     date_upd:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Update timestamp
+ *                       example: "2024-01-15T14:30:00.000Z"
+ *             example:
+ *               success: true
+ *               errorCode: 0
+ *               value:
+ *                 id: 1
+ *                 wr_shk: "CELL001"
+ *                 wr_name: "Склад А - Ячейка 001"
+ *                 kolvo: 10
+ *                 date_upd: "2024-01-15T14:30:00.000Z"
+ *       400:
+ *         description: Bad request - validation error, record not found, or warehouse not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               validationError:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Validation failed: id is required and must be a positive number"
+ *               recordNotFound:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Record with ID 999 not found"
+ *               warehouseNotFound:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Warehouse with SHK 'INVALID' not found in x_Storage_Scklads"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 500
+ *               value:
+ *                 error: "Internal server error"
+ */
+router.put('/update', x3plController.updateRecord);
+
+/**
+ * @swagger
  * /x3pl/razmeshennye:
  *   get:
  *     summary: Get all placed items from X_Three_PL table

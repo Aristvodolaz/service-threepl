@@ -55,6 +55,63 @@ class X3PLService {
   }
 
   /**
+   * Add minimal record to X_Three_PL with only shk and name
+   * @param {Object} data - Input data containing shk and name
+   * @returns {Promise<Object>} Success response or error
+   */
+  async addMinimalRecord(data) {
+    try {
+      // Validate input data - only shk and name are required
+      const validationErrors = this.validateMinimalData(data);
+      if (validationErrors.length > 0) {
+        throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+      }
+
+      // Insert minimal record into database
+      const insertedRecord = await x3plRepository.insertMinimal(data.shk, data.name);
+
+      console.log(`Minimal record inserted successfully with ID: ${insertedRecord.id}`);
+
+      return {
+        success: true,
+        data: {
+          id: insertedRecord.id,
+          shk: insertedRecord.shk,
+          name: insertedRecord.name,
+          date: insertedRecord.date
+        }
+      };
+    } catch (error) {
+      console.error('Error in addMinimalRecord service:', error);
+      
+      // Return error response
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Validate minimal record request data
+   * @param {Object} data - Input data
+   * @returns {Array} Array of validation errors
+   */
+  validateMinimalData(data) {
+    const errors = [];
+
+    if (!data.shk || typeof data.shk !== 'string' || data.shk.trim() === '') {
+      errors.push('shk is required and must be a non-empty string');
+    }
+
+    if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
+      errors.push('name is required and must be a non-empty string');
+    }
+
+    return errors;
+  }
+
+  /**
    * Get all placed items (razmeshennye)
    * @returns {Promise<Object>} Success response with data or error
    */
@@ -434,6 +491,94 @@ class X3PLService {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Update record with wr_shk and kolvo
+   * @param {Object} data - Input data containing id, wr_shk, and kolvo
+   * @returns {Promise<Object>} Success response or error
+   */
+  async updateRecord(data) {
+    try {
+      // Validate input data
+      const validationErrors = this.validateUpdateData(data);
+      if (validationErrors.length > 0) {
+        throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+      }
+
+      // Check if record exists
+      const existingRecord = await x3plRepository.findRecordById(data.id);
+      if (!existingRecord) {
+        return {
+          success: false,
+          error: `Record with ID ${data.id} not found`
+        };
+      }
+
+      // Get warehouse name by wr_shk
+      const warehouseName = await x3plRepository.getWarehouseNameBySHK(data.wr_shk);
+      
+      if (!warehouseName) {
+        return {
+          success: false,
+          error: `Warehouse with SHK '${data.wr_shk}' not found in x_Storage_Scklads`
+        };
+      }
+
+      // Update record in database
+      const updatedRecord = await x3plRepository.updateRecord(
+        data.id, 
+        data.wr_shk, 
+        data.kolvo, 
+        warehouseName
+      );
+
+      console.log(`Record with ID ${data.id} updated successfully:`, updatedRecord);
+
+      return {
+        success: true,
+        data: {
+          id: updatedRecord.id,
+          wr_shk: updatedRecord.wr_shk,
+          wr_name: updatedRecord.wr_name,
+          kolvo: updatedRecord.kolvo,
+          date_upd: updatedRecord.date_upd
+        }
+      };
+    } catch (error) {
+      console.error('Error in updateRecord service:', error);
+      
+      // Return error response
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Validate update record request data
+   * @param {Object} data - Input data
+   * @returns {Array} Array of validation errors
+   */
+  validateUpdateData(data) {
+    const errors = [];
+
+    if (!data.id || typeof data.id !== 'number' || data.id <= 0) {
+      errors.push('id is required and must be a positive number');
+    }
+
+    if (!data.wr_shk || typeof data.wr_shk !== 'string' || data.wr_shk.trim() === '') {
+      errors.push('wr_shk is required and must be a non-empty string');
+    }
+
+    // Convert kolvo to number if it's a string
+    const kolvo = typeof data.kolvo === 'string' ? parseInt(data.kolvo, 10) : data.kolvo;
+    if (kolvo === undefined || kolvo === null || typeof kolvo !== 'number' || kolvo < 0 || isNaN(kolvo)) {
+      errors.push('kolvo is required and must be a non-negative number');
+    }
+
+    return errors;
   }
 }
 

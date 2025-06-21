@@ -69,6 +69,52 @@ class X3PLRepository {
   }
 
   /**
+   * Insert minimal record into X_Three_PL table with only shk and name
+   * @param {string} shk - Product barcode
+   * @param {string} name - Product name
+   * @returns {Promise<Object>} Inserted record with ID
+   */
+  async insertMinimal(shk, name) {
+    try {
+      const pool = await poolPromise;
+      const currentDate = new Date();
+      
+      const result = await pool.request()
+        .input('shk', sql.NVarChar(100), shk)
+        .input('name', sql.NVarChar(255), name)
+        .input('date', sql.DateTime, currentDate)
+        .query(`
+          INSERT INTO dbo.X_Three_PL 
+          (shk, name, wr_shk, wr_name, kolvo, condition, reason, ispolnitel, date, date_upd)
+          VALUES 
+          (@shk, @name, NULL, NULL, 0, NULL, NULL, NULL, @date, NULL);
+          
+          SELECT SCOPE_IDENTITY() as id;
+        `);
+
+      if (result.recordset && result.recordset.length > 0) {
+        return {
+          id: result.recordset[0].id,
+          shk: shk,
+          name: name,
+          wr_shk: null,
+          wr_name: null,
+          kolvo: 0,
+          condition: null,
+          reason: null,
+          ispolnitel: null,
+          date: currentDate,
+          date_upd: null
+        };
+      }
+      throw new Error('Failed to insert minimal record');
+    } catch (error) {
+      console.error('Error inserting minimal record:', error);
+      throw new Error(`Failed to insert minimal record: ${error.message}`);
+    }
+  }
+
+  /**
    * Check if X_Three_PL table exists
    * @returns {Promise<boolean>} True if table exists
    */
@@ -133,6 +179,7 @@ class X3PLRepository {
       const result = await pool.request()
         .query(`
           SELECT 
+            id,
             shk,
             name,
             wr_shk,
@@ -499,6 +546,90 @@ class X3PLRepository {
     } catch (error) {
       console.error('Error getting total records count:', error);
       throw new Error(`Failed to get total records count: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update record with wr_shk and kolvo
+   * @param {number} id - Record ID
+   * @param {string} wr_shk - Warehouse barcode
+   * @param {number} kolvo - Quantity
+   * @param {string} wr_name - Warehouse name
+   * @returns {Promise<Object>} Updated record info
+   */
+  async updateRecord(id, wr_shk, kolvo, wr_name) {
+    try {
+      const pool = await poolPromise;
+      const currentDate = new Date();
+      
+      const result = await pool.request()
+        .input('id', sql.Int, id)
+        .input('wr_shk', sql.NVarChar(100), wr_shk)
+        .input('kolvo', sql.Int, kolvo)
+        .input('wr_name', sql.NVarChar(255), wr_name)
+        .input('dateUpd', sql.DateTime, currentDate)
+        .query(`
+          UPDATE dbo.X_Three_PL
+          SET wr_shk = @wr_shk,
+              wr_name = @wr_name,
+              kolvo = @kolvo,
+              date_upd = @dateUpd
+          WHERE id = @id;
+          
+          SELECT @@ROWCOUNT as affectedRows;
+        `);
+
+      if (result.recordset && result.recordset[0].affectedRows > 0) {
+        return { 
+          id, 
+          wr_shk, 
+          kolvo, 
+          wr_name, 
+          date_upd: currentDate,
+          updated: true 
+        };
+      }
+      throw new Error('Record not found or no changes made');
+    } catch (error) {
+      console.error('Error updating record:', error);
+      throw new Error(`Failed to update record: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find record by ID
+   * @param {number} id - Record ID
+   * @returns {Promise<Object|null>} Found record or null
+   */
+  async findRecordById(id) {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('id', sql.Int, id)
+        .query(`
+          SELECT 
+            id,
+            shk,
+            name,
+            wr_shk,
+            wr_name,
+            kolvo,
+            condition,
+            reason,
+            ispolnitel,
+            date,
+            date_upd
+          FROM dbo.X_Three_PL
+          WHERE id = @id
+        `);
+
+      if (result.recordset && result.recordset.length > 0) {
+        return result.recordset[0];
+      }
+      return null;
+    } catch (error) {
+      console.error('Error finding record by ID:', error);
+      throw new Error(`Failed to find record by ID: ${error.message}`);
     }
   }
 }
