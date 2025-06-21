@@ -168,8 +168,8 @@ router.post('/add-minimal', x3plController.addMinimalRecord);
  * @swagger
  * /x3pl/update:
  *   put:
- *     summary: Update record with warehouse barcode and quantity
- *     description: Updates an existing record in X_Three_PL table with wr_shk and kolvo. Automatically sets date_upd to current datetime and retrieves warehouse name from x_Storage_Scklads.
+ *     summary: Update record with warehouse barcode, quantity, executor, condition and reason
+ *     description: Updates an existing record in X_Three_PL table with wr_shk, kolvo, ispolnitel, condition, and reason. Automatically sets date_upd to current datetime and retrieves warehouse name from x_Storage_Scklads.
  *     tags:
  *       - X_Three_PL
  *     requestBody:
@@ -196,10 +196,34 @@ router.post('/add-minimal', x3plController.addMinimalRecord);
  *                 minimum: 0
  *                 description: Quantity
  *                 example: 10
- *           example:
- *             id: 1
- *             wr_shk: "CELL001"
- *             kolvo: 10
+ *               ispolnitel:
+ *                 type: string
+ *                 description: Executor name (optional)
+ *                 example: "Иванов И.И."
+ *               condition:
+ *                 type: string
+ *                 description: Product condition (optional)
+ *                 example: "Good"
+ *               reason:
+ *                 type: string
+ *                 description: Reason for update (optional)
+ *                 example: "Размещение товара"
+ *           examples:
+ *             minimal:
+ *               summary: Minimal update (only required fields)
+ *               value:
+ *                 id: 1
+ *                 wr_shk: "CELL001"
+ *                 kolvo: 10
+ *             full:
+ *               summary: Full update (all fields)
+ *               value:
+ *                 id: 1
+ *                 wr_shk: "CELL001"
+ *                 kolvo: 10
+ *                 ispolnitel: "Иванов И.И."
+ *                 condition: "Good"
+ *                 reason: "Размещение товара"
  *     responses:
  *       200:
  *         description: Record updated successfully
@@ -233,6 +257,21 @@ router.post('/add-minimal', x3plController.addMinimalRecord);
  *                       type: integer
  *                       description: Updated quantity
  *                       example: 10
+ *                     ispolnitel:
+ *                       type: string
+ *                       nullable: true
+ *                       description: Executor name
+ *                       example: "Иванов И.И."
+ *                     condition:
+ *                       type: string
+ *                       nullable: true
+ *                       description: Product condition
+ *                       example: "Good"
+ *                     reason:
+ *                       type: string
+ *                       nullable: true
+ *                       description: Reason for update
+ *                       example: "Размещение товара"
  *                     date_upd:
  *                       type: string
  *                       format: date-time
@@ -246,6 +285,9 @@ router.post('/add-minimal', x3plController.addMinimalRecord);
  *                 wr_shk: "CELL001"
  *                 wr_name: "Склад А - Ячейка 001"
  *                 kolvo: 10
+ *                 ispolnitel: "Иванов И.И."
+ *                 condition: "Good"
+ *                 reason: "Размещение товара"
  *                 date_upd: "2024-01-15T14:30:00.000Z"
  *       400:
  *         description: Bad request - validation error, record not found, or warehouse not found
@@ -272,6 +314,12 @@ router.post('/add-minimal', x3plController.addMinimalRecord);
  *                   errorCode: 400
  *                   value:
  *                     error: "Warehouse with SHK 'INVALID' not found in x_Storage_Scklads"
+ *               invalidOptionalField:
+ *                 value:
+ *                   success: false
+ *                   errorCode: 400
+ *                   value:
+ *                     error: "Validation failed: ispolnitel must be a non-empty string if provided"
  *       500:
  *         description: Internal server error
  *         content:

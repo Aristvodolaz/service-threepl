@@ -557,6 +557,77 @@ class X3PLService {
   }
 
   /**
+   * Update record with extended fields including ispolnitel, condition, and reason
+   * @param {Object} data - Input data containing id, wr_shk, kolvo, ispolnitel, condition, reason
+   * @returns {Promise<Object>} Success response or error
+   */
+  async updateRecord(data) {
+    try {
+      // Validate input data
+      const validationErrors = this.validateUpdateData(data);
+      if (validationErrors.length > 0) {
+        throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+      }
+
+      // Check if record exists
+      const existingRecord = await x3plRepository.findRecordById(data.id);
+      if (!existingRecord) {
+        return {
+          success: false,
+          error: `Record with ID ${data.id} not found`
+        };
+      }
+
+      // Get warehouse name by wr_shk
+      const warehouseName = await x3plRepository.getWarehouseNameBySHK(data.wr_shk);
+      
+      if (!warehouseName) {
+        return {
+          success: false,
+          error: `Warehouse with SHK '${data.wr_shk}' not found in x_Storage_Scklads`
+        };
+      }
+
+      // Prepare update data
+      const updateData = {
+        wr_shk: data.wr_shk,
+        wr_name: warehouseName,
+        kolvo: data.kolvo,
+        ispolnitel: data.ispolnitel || null,
+        condition: data.condition || null,
+        reason: data.reason || null
+      };
+
+      // Update record in database with extended fields
+      const updatedRecord = await x3plRepository.updateRecordExtended(data.id, updateData);
+
+      console.log(`Record with ID ${data.id} updated successfully with extended fields:`, updatedRecord);
+
+      return {
+        success: true,
+        data: {
+          id: updatedRecord.id,
+          wr_shk: updatedRecord.wr_shk,
+          wr_name: updatedRecord.wr_name,
+          kolvo: updatedRecord.kolvo,
+          ispolnitel: updatedRecord.ispolnitel,
+          condition: updatedRecord.condition,
+          reason: updatedRecord.reason,
+          date_upd: updatedRecord.date_upd
+        }
+      };
+    } catch (error) {
+      console.error('Error in updateRecord service:', error);
+      
+      // Return error response
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Validate update record request data
    * @param {Object} data - Input data
    * @returns {Array} Array of validation errors
@@ -576,6 +647,19 @@ class X3PLService {
     const kolvo = typeof data.kolvo === 'string' ? parseInt(data.kolvo, 10) : data.kolvo;
     if (kolvo === undefined || kolvo === null || typeof kolvo !== 'number' || kolvo < 0 || isNaN(kolvo)) {
       errors.push('kolvo is required and must be a non-negative number');
+    }
+
+    // Optional fields validation
+    if (data.ispolnitel !== undefined && data.ispolnitel !== null && (typeof data.ispolnitel !== 'string' || data.ispolnitel.trim() === '')) {
+      errors.push('ispolnitel must be a non-empty string if provided');
+    }
+
+    if (data.condition !== undefined && data.condition !== null && (typeof data.condition !== 'string' || data.condition.trim() === '')) {
+      errors.push('condition must be a non-empty string if provided');
+    }
+
+    if (data.reason !== undefined && data.reason !== null && (typeof data.reason !== 'string' || data.reason.trim() === '')) {
+      errors.push('reason must be a non-empty string if provided');
     }
 
     return errors;

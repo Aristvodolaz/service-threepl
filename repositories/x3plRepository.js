@@ -597,6 +597,66 @@ class X3PLRepository {
   }
 
   /**
+   * Update record with extended fields
+   * @param {number} id - Record ID
+   * @param {Object} updateData - Data to update
+   * @param {string} updateData.wr_shk - Warehouse barcode
+   * @param {string} updateData.wr_name - Warehouse name
+   * @param {number} updateData.kolvo - Quantity
+   * @param {string} updateData.ispolnitel - Executor name
+   * @param {string} updateData.condition - Product condition
+   * @param {string} updateData.reason - Reason
+   * @returns {Promise<Object>} Updated record info
+   */
+  async updateRecordExtended(id, updateData) {
+    try {
+      const pool = await poolPromise;
+      const currentDate = new Date();
+      
+      const result = await pool.request()
+        .input('id', sql.Int, id)
+        .input('wr_shk', sql.NVarChar(100), updateData.wr_shk)
+        .input('wr_name', sql.NVarChar(255), updateData.wr_name)
+        .input('kolvo', sql.Int, updateData.kolvo)
+        .input('ispolnitel', sql.NVarChar(255), updateData.ispolnitel)
+        .input('condition', sql.NVarChar(100), updateData.condition)
+        .input('reason', sql.NVarChar(255), updateData.reason)
+        .input('dateUpd', sql.DateTime, currentDate)
+        .query(`
+          UPDATE dbo.X_Three_PL
+          SET wr_shk = @wr_shk,
+              wr_name = @wr_name,
+              kolvo = @kolvo,
+              ispolnitel = @ispolnitel,
+              condition = @condition,
+              reason = @reason,
+              date_upd = @dateUpd
+          WHERE id = @id;
+          
+          SELECT @@ROWCOUNT as affectedRows;
+        `);
+
+      if (result.recordset && result.recordset[0].affectedRows > 0) {
+        return { 
+          id, 
+          wr_shk: updateData.wr_shk,
+          wr_name: updateData.wr_name,
+          kolvo: updateData.kolvo,
+          ispolnitel: updateData.ispolnitel,
+          condition: updateData.condition,
+          reason: updateData.reason,
+          date_upd: currentDate,
+          updated: true 
+        };
+      }
+      throw new Error('Record not found or no changes made');
+    } catch (error) {
+      console.error('Error updating record with extended fields:', error);
+      throw new Error(`Failed to update record with extended fields: ${error.message}`);
+    }
+  }
+
+  /**
    * Find record by ID
    * @param {number} id - Record ID
    * @returns {Promise<Object|null>} Found record or null
