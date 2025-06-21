@@ -427,4 +427,178 @@ router.get('/search-like', x3plController.searchWithLike);
  */
 router.post('/inventory', x3plController.performInventory);
 
+/**
+ * @swagger
+ * /x3pl/all:
+ *   get:
+ *     summary: Get all records from X_Three_PL table with all fields
+ *     description: Returns all records from X_Three_PL table with complete data including id, dates, and executor information. Supports pagination for large datasets.
+ *     tags:
+ *       - X_Three_PL
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 10000
+ *           default: 1000
+ *         description: Maximum number of records to return (max 10000)
+ *         example: 100
+ *       - in: query
+ *         name: offset
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Number of records to skip for pagination
+ *         example: 0
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved records
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 errorCode:
+ *                   type: integer
+ *                   example: 0
+ *                 value:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             description: Record ID
+ *                             example: 1
+ *                           shk:
+ *                             type: string
+ *                             description: Product barcode
+ *                             example: "1234567890"
+ *                           name:
+ *                             type: string
+ *                             description: Product name
+ *                             example: "Товар 1"
+ *                           wr_shk:
+ *                             type: string
+ *                             description: Warehouse barcode
+ *                             example: "CELL001"
+ *                           wr_name:
+ *                             type: string
+ *                             description: Warehouse name
+ *                             example: "Склад А - Ячейка 001"
+ *                           kolvo:
+ *                             type: integer
+ *                             description: Quantity
+ *                             example: 10
+ *                           condition:
+ *                             type: string
+ *                             description: Product condition
+ *                             example: "Good"
+ *                           reason:
+ *                             type: string
+ *                             nullable: true
+ *                             description: Reason for storage
+ *                             example: "Storage"
+ *                           ispolnitel:
+ *                             type: string
+ *                             description: Executor name
+ *                             example: "Иванов И.И."
+ *                           date:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Creation date
+ *                             example: "2024-01-15T10:30:00.000Z"
+ *                           date_upd:
+ *                             type: string
+ *                             format: date-time
+ *                             nullable: true
+ *                             description: Last update date
+ *                             example: "2024-01-16T14:20:00.000Z"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                           description: Total number of records in table
+ *                           example: 1500
+ *                         limit:
+ *                           type: integer
+ *                           description: Number of records returned in this request
+ *                           example: 100
+ *                         offset:
+ *                           type: integer
+ *                           description: Number of records skipped
+ *                           example: 0
+ *                         hasMore:
+ *                           type: boolean
+ *                           description: Whether there are more records available
+ *                           example: true
+ *             example:
+ *               success: true
+ *               errorCode: 0
+ *               value:
+ *                 items:
+ *                   - id: 1
+ *                     shk: "1234567890"
+ *                     name: "Товар 1"
+ *                     wr_shk: "CELL001"
+ *                     wr_name: "Склад А - Ячейка 001"
+ *                     kolvo: 10
+ *                     condition: "Good"
+ *                     reason: "Storage"
+ *                     ispolnitel: "Иванов И.И."
+ *                     date: "2024-01-15T10:30:00.000Z"
+ *                     date_upd: "2024-01-16T14:20:00.000Z"
+ *                   - id: 2
+ *                     shk: "9876543210"
+ *                     name: "Товар 2"
+ *                     wr_shk: "CELL002"
+ *                     wr_name: "Склад Б - Ячейка 002"
+ *                     kolvo: 5
+ *                     condition: "Excellent"
+ *                     reason: null
+ *                     ispolnitel: "Петров П.П."
+ *                     date: "2024-01-14T09:15:00.000Z"
+ *                     date_upd: null
+ *                 pagination:
+ *                   total: 1500
+ *                   limit: 100
+ *                   offset: 0
+ *                   hasMore: true
+ *       400:
+ *         description: Bad request - invalid pagination parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 400
+ *               value:
+ *                 error: "Invalid pagination parameters"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               errorCode: 500
+ *               value:
+ *                 error: "Internal server error"
+ */
+router.get('/all', x3plController.getAllRecords);
+
 module.exports = router; 

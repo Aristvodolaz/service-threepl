@@ -439,6 +439,68 @@ class X3PLRepository {
       throw new Error(`Failed to create table: ${error.message}`);
     }
   }
+
+  /**
+   * Get all records from X_Three_PL table with all fields
+   * @param {Object} options - Query options
+   * @param {number} options.limit - Maximum number of records to return (default: 1000)
+   * @param {number} options.offset - Number of records to skip (default: 0)
+   * @returns {Promise<Array>} Array of all records with complete data
+   */
+  async getAllRecords(options = {}) {
+    try {
+      const pool = await poolPromise;
+      const limit = options.limit || 1000;
+      const offset = options.offset || 0;
+      
+      const result = await pool.request()
+        .input('limit', sql.Int, limit)
+        .input('offset', sql.Int, offset)
+        .query(`
+          SELECT 
+            id,
+            shk,
+            name,
+            wr_shk,
+            wr_name,
+            kolvo,
+            condition,
+            reason,
+            ispolnitel,
+            date,
+            date_upd
+          FROM dbo.X_Three_PL
+          ORDER BY date DESC
+          OFFSET @offset ROWS
+          FETCH NEXT @limit ROWS ONLY
+        `);
+
+      return result.recordset || [];
+    } catch (error) {
+      console.error('Error getting all records:', error);
+      throw new Error(`Failed to get all records: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get total count of records in X_Three_PL table
+   * @returns {Promise<number>} Total number of records
+   */
+  async getTotalRecordsCount() {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .query(`
+          SELECT COUNT(*) as total
+          FROM dbo.X_Three_PL
+        `);
+
+      return result.recordset[0].total || 0;
+    } catch (error) {
+      console.error('Error getting total records count:', error);
+      throw new Error(`Failed to get total records count: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new X3PLRepository(); 

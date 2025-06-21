@@ -390,6 +390,51 @@ class X3PLService {
       throw error;
     }
   }
+
+  /**
+   * Get all records from X_Three_PL table with all fields
+   * @param {Object} options - Query options
+   * @param {number} options.limit - Maximum number of records to return
+   * @param {number} options.offset - Number of records to skip
+   * @returns {Promise<Object>} Success response with data or error
+   */
+  async getAllRecords(options = {}) {
+    try {
+      // Validate and set default options
+      const queryOptions = {
+        limit: Math.min(options.limit || 1000, 10000), // Max 10000 records per request
+        offset: Math.max(options.offset || 0, 0)
+      };
+
+      // Get records from repository
+      const items = await x3plRepository.getAllRecords(queryOptions);
+      
+      // Get total count for pagination info
+      const totalCount = await x3plRepository.getTotalRecordsCount();
+
+      console.log(`Retrieved ${items.length} records (offset: ${queryOptions.offset}, limit: ${queryOptions.limit}) from total ${totalCount}`);
+
+      // Return success response with data and pagination info
+      return {
+        success: true,
+        data: items,
+        pagination: {
+          total: totalCount,
+          limit: queryOptions.limit,
+          offset: queryOptions.offset,
+          hasMore: queryOptions.offset + queryOptions.limit < totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Error in getAllRecords service:', error);
+      
+      // Return error response
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
 
 module.exports = new X3PLService(); 

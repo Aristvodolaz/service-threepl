@@ -322,6 +322,57 @@ class X3PLController {
       });
     }
   }
+
+  /**
+   * Handle GET request to get all records with all fields
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  async getAllRecords(req, res) {
+    try {
+      // Get pagination parameters from query
+      const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
+      const offset = req.query.offset ? parseInt(req.query.offset, 10) : undefined;
+      
+      // Log incoming request
+      console.log('Received GET /x3pl/all request with params:', { limit, offset });
+
+      // Call service to get all records
+      const result = await x3plService.getAllRecords({ limit, offset });
+
+      if (result.success) {
+        // Success response with data and pagination info
+        res.status(200).json({
+          success: true,
+          errorCode: 0,
+          value: {
+            items: result.data,
+            pagination: result.pagination
+          }
+        });
+      } else {
+        // Service error
+        res.status(500).json({
+          success: false,
+          errorCode: 500,
+          value: {
+            error: result.error
+          }
+        });
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error('Unexpected error in getAllRecords controller:', error);
+      
+      res.status(500).json({
+        success: false,
+        errorCode: 500,
+        value: {
+          error: 'Internal server error'
+        }
+      });
+    }
+  }
 }
 
 module.exports = new X3PLController(); 
